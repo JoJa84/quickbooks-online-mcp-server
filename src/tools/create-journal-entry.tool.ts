@@ -4,7 +4,13 @@ import { z } from "zod";
 
 // Define the tool metadata
 const toolName = "create_journal_entry";
-const toolDescription = "Create a journal entry in QuickBooks Online. Description goes on the Line level, not inside JournalEntryLineDetail.";
+const toolDescription =
+  "Create a journal entry in QuickBooks Online. Debits must equal credits. Description goes on the Line level, " +
+  "not inside JournalEntryLineDetail. A line posted to an Accounts Receivable account needs " +
+  "JournalEntryLineDetail.Entity {Type:'Customer', EntityRef:{value}}, and a line posted to Accounts Payable needs " +
+  "Entity {Type:'Vendor', EntityRef:{value}}. ClassRef/DepartmentRef on a line are only honored when the company has " +
+  "class/location tracking enabled (get_preferences: AccountingInfoPrefs.ClassTrackingPerTxnLine / TrackDepartments); " +
+  "QuickBooks silently drops them otherwise.";
 
 // Define the expected input schema for creating a journal entry.
 // .passthrough() is used on the object levels so valid QBO fields that aren't
@@ -34,6 +40,13 @@ const toolSchema = z.object({
           value: z.string(),
           name: z.string().optional(),
         }).optional(),
+        Entity: z.object({
+          Type: z.enum(["Customer", "Vendor", "Employee"]),
+          EntityRef: z.object({
+            value: z.string(),
+            name: z.string().optional(),
+          }),
+        }).optional().describe("Required on A/R lines (Customer) and A/P lines (Vendor)"),
       }).passthrough(),
     }).passthrough()),
   }).passthrough(),

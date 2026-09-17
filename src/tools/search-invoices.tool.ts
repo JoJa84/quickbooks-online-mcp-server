@@ -3,7 +3,13 @@ import { ToolDefinition } from "../types/tool-definition.js";
 import { z } from "zod";
 
 const toolName = "search_invoices";
-const toolDescription = "Search invoices in QuickBooks Online using criteria (maps to node-quickbooks findInvoices).";
+const toolDescription =
+  "Search invoices in QuickBooks Online. Pass criteria as an ARRAY of conditions, each " +
+  "{field, value, operator}, e.g. [{\"field\":\"CustomerRef\",\"value\":\"58\"},{\"field\":\"Balance\",\"value\":0,\"operator\":\">\"}] " +
+  "for a customer's open invoices. Filterable fields: Id, DocNumber, TxnDate, DueDate, CustomerRef, ClassRef, " +
+  "DepartmentRef, Balance, TotalAmt, MetaData.CreateTime, MetaData.LastUpdatedTime. Operators: =, IN, <, >, <=, >=, LIKE. " +
+  "Alternatively pass {filters:[...], asc|desc: field, limit, offset}. A plain keyed object is passed through as " +
+  "equality filters only.";
 
 // ALLOWED FIELD LISTS (derived from Quickbooks Invoice entity docs – Filterable and Sortable columns)
 const ALLOWED_FILTER_FIELDS = [

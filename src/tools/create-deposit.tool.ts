@@ -3,11 +3,26 @@ import { ToolDefinition } from "../types/tool-definition.js";
 import { z } from "zod";
 
 const toolName = "create_deposit";
-const toolDescription = "Create a bank deposit in QuickBooks Online.";
+const toolDescription =
+  "Create a bank deposit in QuickBooks Online. Each line posts to an account (income, a clearing " +
+  "account, etc.) and may name the customer or vendor it came from via entity_ref. A NEGATIVE " +
+  "line amount is allowed for deductions taken out of the deposit, such as a bank or merchant fee " +
+  "posted to an expense account.";
+
+const entityRefSchema = z.object({
+  type: z
+    .enum(["Customer", "Vendor", "Employee"])
+    .describe("Kind of name on this line"),
+  value: z.string().min(1).describe("Id of the customer, vendor or employee"),
+});
 
 const lineItemSchema = z.object({
-  amount: z.number().positive(),
-  account_ref: z.string().optional(),
+  amount: z
+    .number()
+    .refine((v) => v !== 0, { message: "Line amount must not be zero" })
+    .describe("Amount; negative for a fee or other deduction from the deposit"),
+  account_ref: z.string().optional().describe("Account Id the line posts to (e.g. an income or expense account)"),
+  entity_ref: entityRefSchema.optional().describe("Customer/vendor/employee the money came from (received from)"),
   description: z.string().optional(),
 });
 

@@ -11,6 +11,7 @@ export interface CreateInvoiceInput {
     description?: string;
     tax_code_ref?: string; // TaxCode id (non-US) or TAX/NON (US)
     service_date?: string; // YYYY-MM-DD, per-line ServiceDate
+    class_ref?: string; // Class id, per line (needs class tracking enabled)
   }>;
   doc_number?: string;
   txn_date?: string; // YYYY-MM-DD
@@ -22,12 +23,19 @@ export interface CreateInvoiceInput {
   customer_memo?: string; // CustomerMemo (customer-facing message)
   sales_term_ref?: string; // SalesTerm id; falls back to customer default
   bill_email?: string; // BillEmail address; falls back to customer default
+  due_date?: string; // YYYY-MM-DD; overrides the sales-term computed due date
+  class_ref?: string; // Class id for the whole transaction (needs class tracking enabled)
+  department_ref?: string; // Department/location id (needs location tracking enabled)
+  private_note?: string; // Internal memo, not shown to the customer
+  ship_date?: string; // YYYY-MM-DD
 }
 
 // Primitive field type map (based on Quickbooks Invoice entity reference docs)
 const invoiceFieldTypeMap: Record<string, "string" | "number" | "boolean"> = {
   DocNumber: "string",
   TxnDate: "string",
+  DueDate: "string",
+  ShipDate: "string",
   PrivateNote: "string",
   GlobalTaxCalculation: "string",
   ApplyTaxAfterDiscount: "boolean",
@@ -80,6 +88,7 @@ export async function createQuickbooksInvoice(data: CreateInvoiceInput): Promise
           UnitPrice: l.unit_price,
           TaxCodeRef: l.tax_code_ref ? { value: l.tax_code_ref } : undefined,
           ServiceDate: l.service_date || undefined,
+          ClassRef: l.class_ref ? { value: l.class_ref } : undefined,
         },
       })),
       DocNumber: data.doc_number,
@@ -93,6 +102,11 @@ export async function createQuickbooksInvoice(data: CreateInvoiceInput): Promise
       ...(data.customer_memo && { CustomerMemo: { value: data.customer_memo } }),
       ...(data.sales_term_ref && { SalesTermRef: { value: data.sales_term_ref } }),
       ...(data.bill_email && { BillEmail: { Address: data.bill_email } }),
+      ...(data.due_date && { DueDate: data.due_date }),
+      ...(data.class_ref && { ClassRef: { value: data.class_ref } }),
+      ...(data.department_ref && { DepartmentRef: { value: data.department_ref } }),
+      ...(data.private_note && { PrivateNote: data.private_note }),
+      ...(data.ship_date && { ShipDate: data.ship_date }),
     };
 
     if (data.global_tax_calculation) {

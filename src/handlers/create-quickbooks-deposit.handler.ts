@@ -27,7 +27,10 @@ export async function createQuickbooksDeposit(data: CreateDepositInput): Promise
         DetailType: "DepositLineDetail",
         DepositLineDetail: {
           AccountRef: l.account_ref ? { value: l.account_ref } : undefined,
-          Entity: l.entity_ref ? { Type: l.entity_ref.type, EntityRef: { value: l.entity_ref.value } } : undefined,
+          // DepositLineDetail.Entity is a plain ReferenceType ({value}) in QBO, unlike
+          // JournalEntryLineDetail.Entity ({Type, EntityRef}). Sending the JE shape
+          // makes QBO reject the whole deposit with "unsupported property" (code 2010).
+          Entity: l.entity_ref ? { value: l.entity_ref.value } : undefined,
         },
       })),
     };

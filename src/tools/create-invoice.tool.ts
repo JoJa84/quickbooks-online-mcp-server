@@ -3,7 +3,11 @@ import { ToolDefinition } from "../types/tool-definition.js";
 import { z } from "zod";
 
 const toolName = "create_invoice";
-const toolDescription = "Create an invoice in QuickBooks Online.";
+const toolDescription =
+  "Create an invoice in QuickBooks Online. Supports due_date, class_ref, department_ref, " +
+  "private_note and ship_date in addition to line items. class_ref/department_ref are only " +
+  "honored when the company has class/location tracking enabled (see get_preferences: " +
+  "AccountingInfoPrefs.ClassTrackingPerTxn / TrackDepartments); QuickBooks silently ignores them otherwise.";
 
 const lineItemSchema = z.object({
   item_ref: z.string().min(1),
@@ -22,6 +26,11 @@ const lineItemSchema = z.object({
     .min(1)
     .optional()
     .describe("Date the service was performed (YYYY-MM-DD), shown per line on the invoice"),
+  class_ref: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Class Id for this line (use search_classes). Requires per-line class tracking to be enabled"),
 });
 
 const linkedTxnSchema = z.object({
@@ -54,6 +63,27 @@ const toolSchema = z.object({
     .min(1)
     .optional()
     .describe("Billing email address (QBO BillEmail). Falls back to the customer default if omitted"),
+  due_date: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Due date (YYYY-MM-DD). Overrides the date QuickBooks would compute from the sales term"),
+  class_ref: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Class Id for the whole invoice (use search_classes). Requires class tracking to be enabled"),
+  department_ref: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Department/location Id (use search_departments). Requires location tracking to be enabled"),
+  private_note: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Internal memo (QBO PrivateNote); not printed on the customer's invoice"),
+  ship_date: z.string().min(1).optional().describe("Ship date (YYYY-MM-DD)"),
 });
 
 const toolHandler = async ({ params }: any) => {

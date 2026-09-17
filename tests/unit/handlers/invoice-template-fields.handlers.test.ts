@@ -68,3 +68,49 @@ describe('Create Invoice Handler - template fields', () => {
     expect(payload.Line[0].SalesItemLineDetail.ServiceDate).toBeUndefined();
   });
 });
+
+describe('Create Invoice Handler - header and line tracking fields', () => {
+  beforeEach(() => {
+    resetAllMocks();
+  });
+
+  it('maps due_date, class_ref, department_ref, private_note, ship_date and per-line class_ref', async () => {
+    mockQuickBooksInstance.createInvoice.mockImplementation((_payload: any, cb: any) => cb(null, { Id: '901' }));
+
+    const result = await createQuickbooksInvoice({
+      customer_ref: '42',
+      line_items: [{ item_ref: '1', qty: 2, unit_price: 50, class_ref: '77' }],
+      due_date: '2026-10-15',
+      class_ref: '723734',
+      department_ref: '1',
+      private_note: 'internal only',
+      ship_date: '2026-09-20',
+    });
+
+    expect(result.isError).toBe(false);
+    const payload = mockQuickBooksInstance.createInvoice.mock.calls[0][0] as any;
+    expect(payload.DueDate).toBe('2026-10-15');
+    expect(payload.ClassRef).toEqual({ value: '723734' });
+    expect(payload.DepartmentRef).toEqual({ value: '1' });
+    expect(payload.PrivateNote).toBe('internal only');
+    expect(payload.ShipDate).toBe('2026-09-20');
+    expect(payload.Line[0].SalesItemLineDetail.ClassRef).toEqual({ value: '77' });
+  });
+
+  it('omits the tracking fields when not provided', async () => {
+    mockQuickBooksInstance.createInvoice.mockImplementation((_payload: any, cb: any) => cb(null, { Id: '902' }));
+
+    await createQuickbooksInvoice({
+      customer_ref: '42',
+      line_items: [{ item_ref: '1', qty: 1, unit_price: 100 }],
+    });
+
+    const payload = mockQuickBooksInstance.createInvoice.mock.calls[0][0] as any;
+    expect(payload.DueDate).toBeUndefined();
+    expect(payload.ClassRef).toBeUndefined();
+    expect(payload.DepartmentRef).toBeUndefined();
+    expect(payload.PrivateNote).toBeUndefined();
+    expect(payload.ShipDate).toBeUndefined();
+    expect(payload.Line[0].SalesItemLineDetail.ClassRef).toBeUndefined();
+  });
+});
