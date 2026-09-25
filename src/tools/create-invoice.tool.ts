@@ -7,11 +7,15 @@ const toolDescription =
   "Create an invoice in QuickBooks Online. Supports due_date, class_ref, department_ref, " +
   "private_note and ship_date in addition to line items. class_ref/department_ref are only " +
   "honored when the company has class/location tracking enabled (see get_preferences: " +
-  "AccountingInfoPrefs.ClassTrackingPerTxn / TrackDepartments); QuickBooks silently ignores them otherwise.";
+  "AccountingInfoPrefs.ClassTrackingPerTxn / TrackDepartments); QuickBooks silently ignores them otherwise. " +
+  "custom_fields sets sales-form custom fields (e.g. 'Utility Account No.'); the field must already be " +
+  "defined in the company's sales form settings. qty may be 0 for a $0 line. If a create fails with a " +
+  "timeout or 5xx, search_invoices for this customer and txn_date before retrying: QuickBooks may have " +
+  "created the invoice anyway, and a blind retry posts it twice.";
 
 const lineItemSchema = z.object({
   item_ref: z.string().min(1),
-  qty: z.number().positive(),
+  qty: z.number().nonnegative(),
   unit_price: z.number().nonnegative(),
   description: z.string().optional(),
   tax_code_ref: z
@@ -38,11 +42,25 @@ const linkedTxnSchema = z.object({
   txn_type: z.string().min(1),
 });
 
+const customFieldSchema = z.object({
+  definition_id: z
+    .string()
+    .min(1)
+    .describe("CustomField DefinitionId; see get_preferences SalesFormsPrefs.CustomField or any existing invoice"),
+  name: z.string().min(1).describe("Field name exactly as QuickBooks shows it, e.g. 'Utility Account No.'"),
+  value: z.string().describe("Text value (QuickBooks only supports StringType on sales forms)"),
+});
+
 const toolSchema = z.object({
   customer_ref: z.string().min(1),
   line_items: z.array(lineItemSchema).min(1),
   doc_number: z.string().optional(),
   txn_date: z.string().optional(),
+  custom_fields: z
+    .array(customFieldSchema)
+    .max(3)
+    .optional()
+    .describe("Sales-form custom fields (QBO CustomField). The field must already be defined in the company settings"),
   linked_txn: z.array(linkedTxnSchema).optional(),
   global_tax_calculation: z
     .enum(["TaxExcluded", "TaxInclusive", "NotApplicable"])

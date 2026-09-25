@@ -15,6 +15,11 @@ export interface CreateInvoiceInput {
   }>;
   doc_number?: string;
   txn_date?: string; // YYYY-MM-DD
+  custom_fields?: Array<{
+    definition_id: string; // SalesFormsPrefs.CustomField DefinitionId
+    name: string;
+    value: string;
+  }>;
   linked_txn?: Array<{
     txn_id: string;
     txn_type: string;
@@ -93,6 +98,15 @@ export async function createQuickbooksInvoice(data: CreateInvoiceInput): Promise
       })),
       DocNumber: data.doc_number,
       TxnDate: data.txn_date,
+      ...(data.custom_fields &&
+        data.custom_fields.length > 0 && {
+          CustomField: data.custom_fields.map((cf) => ({
+            DefinitionId: cf.definition_id,
+            Name: cf.name,
+            Type: "StringType",
+            StringValue: cf.value,
+          })),
+        }),
       ...(data.linked_txn && {
         LinkedTxn: data.linked_txn.map((lt) => ({
           TxnId: lt.txn_id,

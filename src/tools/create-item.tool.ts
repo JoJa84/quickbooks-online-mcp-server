@@ -3,7 +3,9 @@ import { ToolDefinition } from "../types/tool-definition.js";
 import { z } from "zod";
 
 const toolName = "create_item";
-const toolDescription = "Create an item in QuickBooks Online.";
+const toolDescription =
+  "Create an item in QuickBooks Online. Pass parent_ref to create it as a sub-item under a category " +
+  "(e.g. 'TECO GAS:...'); find the parent's Id with search_items (FullyQualifiedName).";
 
 const toolSchema = z.object({
   name: z.string().min(1),
@@ -12,6 +14,11 @@ const toolSchema = z.object({
   expense_account_ref: z.string().optional(),
   unit_price: z.number().optional(),
   description: z.string().optional(),
+  parent_ref: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Id of the parent category item; the new item is created as its sub-item (SubItem/ParentRef)"),
 });
 
 const toolHandler = async ({ params }: any) => {

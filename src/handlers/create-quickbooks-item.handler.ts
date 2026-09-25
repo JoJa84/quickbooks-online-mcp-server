@@ -9,6 +9,7 @@ export interface CreateItemInput {
   expense_account_ref?: string;
   unit_price?: number;
   description?: string;
+  parent_ref?: string; // parent category item id; makes this a sub-item
 }
 
 export async function createQuickbooksItem(data: CreateItemInput): Promise<ToolResponse<any>> {
@@ -22,6 +23,7 @@ export async function createQuickbooksItem(data: CreateItemInput): Promise<ToolR
       ExpenseAccountRef: data.expense_account_ref ? { value: data.expense_account_ref } : undefined,
       UnitPrice: data.unit_price,
       Description: data.description,
+      ...(data.parent_ref && { SubItem: true, ParentRef: { value: data.parent_ref } }),
     };
 
     return new Promise((resolve) => {

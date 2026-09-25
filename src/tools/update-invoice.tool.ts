@@ -11,7 +11,7 @@ const toolDescription =
 
 const addLineSchema = z.object({
   item_ref: z.string().min(1),
-  qty: z.number().positive(),
+  qty: z.number().nonnegative(),
   unit_price: z.number().nonnegative(),
   description: z.string().optional(),
   tax_code_ref: z.string().min(1).optional(),
