@@ -15,6 +15,13 @@ export interface CreateCreditMemoInput {
   doc_number?: string;
   private_note?: string;
   global_tax_calculation?: "TaxExcluded" | "TaxInclusive" | "NotApplicable";
+  custom_fields?: Array<{
+    definition_id: string; // SalesFormsPrefs.CustomField DefinitionId
+    name: string;
+    value: string;
+  }>;
+  customer_memo?: string; // CustomerMemo (customer-facing message)
+  bill_email?: string; // BillEmail address; falls back to customer default
 }
 
 export async function createQuickbooksCreditMemo(data: CreateCreditMemoInput): Promise<ToolResponse<any>> {
@@ -49,6 +56,20 @@ export async function createQuickbooksCreditMemo(data: CreateCreditMemoInput): P
     }
     if (data.global_tax_calculation) {
       creditMemoPayload.GlobalTaxCalculation = data.global_tax_calculation;
+    }
+    if (data.custom_fields && data.custom_fields.length > 0) {
+      creditMemoPayload.CustomField = data.custom_fields.map((cf) => ({
+        DefinitionId: cf.definition_id,
+        Name: cf.name,
+        Type: "StringType",
+        StringValue: cf.value,
+      }));
+    }
+    if (data.customer_memo) {
+      creditMemoPayload.CustomerMemo = { value: data.customer_memo };
+    }
+    if (data.bill_email) {
+      creditMemoPayload.BillEmail = { Address: data.bill_email };
     }
 
     return new Promise((resolve) => {

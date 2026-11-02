@@ -8,6 +8,13 @@ export interface UpdateCreditMemoInput {
   customer_ref?: string;
   private_note?: string;
   doc_number?: string;
+  custom_fields?: Array<{
+    definition_id: string; // SalesFormsPrefs.CustomField DefinitionId
+    name: string;
+    value: string;
+  }>;
+  customer_memo?: string; // CustomerMemo (customer-facing message)
+  bill_email?: string; // BillEmail address
 }
 
 export async function updateQuickbooksCreditMemo(data: UpdateCreditMemoInput): Promise<ToolResponse<any>> {
@@ -28,6 +35,20 @@ export async function updateQuickbooksCreditMemo(data: UpdateCreditMemoInput): P
     }
     if (data.doc_number) {
       payload.DocNumber = data.doc_number;
+    }
+    if (data.custom_fields && data.custom_fields.length > 0) {
+      payload.CustomField = data.custom_fields.map((cf) => ({
+        DefinitionId: cf.definition_id,
+        Name: cf.name,
+        Type: "StringType",
+        StringValue: cf.value,
+      }));
+    }
+    if (data.customer_memo) {
+      payload.CustomerMemo = { value: data.customer_memo };
+    }
+    if (data.bill_email) {
+      payload.BillEmail = { Address: data.bill_email };
     }
 
     return new Promise((resolve) => {
